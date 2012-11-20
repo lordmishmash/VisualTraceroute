@@ -1,14 +1,13 @@
-﻿using System;
+﻿/**
+    Code taken from StackOverflow http://stackoverflow.com/a/1351877
+	Original author: MaLio (http://stackoverflow.com/users/128334/malio)
+*/
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace VisualTraceroute {
-    /// <summary>
-    /// Code taken from StackOverflow http://stackoverflow.com/a/1351877
-    /// Original author: MaLio (http://stackoverflow.com/users/128334/malio)
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
     public class SyncList<T> : System.ComponentModel.BindingList<T> {
         private System.ComponentModel.ISynchronizeInvoke _SyncObject;
         private System.Action<System.ComponentModel.ListChangedEventArgs> _FireEventAction;
