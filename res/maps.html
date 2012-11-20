@@ -24,6 +24,7 @@
                 height: 100%;
                 width: 100%;
             }
+            
         </style>
 
         <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
@@ -51,19 +52,29 @@
 
                     nodes.push(new google.maps.LatLng(lat, lng));
 
+
+
+                    var image = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=" + seq + "|000000|FFFFFF",
+                                new google.maps.Size(21, 34),
+                                new google.maps.Point(0, 0),
+                                new google.maps.Point(10, 34)
+                    );
+
                     var marker = new google.maps.Marker({
                         position: new google.maps.LatLng(lat, lng),
                         map: map,
-                        title: ip
+                        title: ip,
+                        icon: image
                     });
 
                     var infowindow = new google.maps.InfoWindow({
-                        content: "<h1 style='font-family: Trebuchet MS; font-size: 12px;'>" + "#" + seq + ": " + ip
+                        content: "<h2 style='font-family: Trebuchet MS;'>#" + seq + ": " + ip + "</h2>"
                     });
 
                     google.maps.event.addListener(marker, 'click', function () {
                         infowindow.open(map, marker);
                     });
+
                 });
 
 

@@ -254,6 +254,8 @@ namespace VisualTraceroute {
         private void rbGeoipInternal_CheckedChanged_1(object sender, EventArgs e) {
             btnGeoipBrowse.Enabled = false;
             Properties.Settings.Default.geoipUseInternal = true;
+
+            GeoipLoadDatabase("./res/GeoLiteCity.dat");
         }
 
         private void rbGeoipFile_CheckedChanged_1(object sender, EventArgs e) {

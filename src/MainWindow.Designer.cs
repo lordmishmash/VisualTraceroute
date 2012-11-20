@@ -23,6 +23,8 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainWindow));
             this.tlpVisualTraceroute = new System.Windows.Forms.TabControl();
             this.tpTraceroute = new System.Windows.Forms.TabPage();
@@ -44,16 +46,16 @@
             this.lbMapStatusDesc = new System.Windows.Forms.Label();
             this.webMap = new System.Windows.Forms.WebBrowser();
             this.tpGeoip = new System.Windows.Forms.TabPage();
-            this.tracerouteWorker = new System.ComponentModel.BackgroundWorker();
             this.tlpGeoip = new System.Windows.Forms.TableLayoutPanel();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.lbMaxMind = new System.Windows.Forms.Label();
             this.llbMaxmind = new System.Windows.Forms.LinkLabel();
             this.panelGeoip = new System.Windows.Forms.Panel();
-            this.rbGeoipInternal = new System.Windows.Forms.RadioButton();
-            this.rbGeoipFile = new System.Windows.Forms.RadioButton();
-            this.tbGeoipDb = new System.Windows.Forms.TextBox();
             this.btnGeoipBrowse = new System.Windows.Forms.Button();
+            this.tbGeoipDb = new System.Windows.Forms.TextBox();
+            this.rbGeoipFile = new System.Windows.Forms.RadioButton();
+            this.rbGeoipInternal = new System.Windows.Forms.RadioButton();
+            this.tracerouteWorker = new System.ComponentModel.BackgroundWorker();
             this.tlpVisualTraceroute.SuspendLayout();
             this.tpTraceroute.SuspendLayout();
             this.tlpTraceroute.SuspendLayout();
@@ -116,6 +118,9 @@
             this.dgvTracert.AllowUserToDeleteRows = false;
             this.dgvTracert.AllowUserToResizeColumns = false;
             this.dgvTracert.AllowUserToResizeRows = false;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.White;
+            dataGridViewCellStyle1.Padding = new System.Windows.Forms.Padding(3);
+            this.dgvTracert.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             this.dgvTracert.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dgvTracert.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvTracert.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -123,6 +128,9 @@
             this.dgvTracert.Name = "dgvTracert";
             this.dgvTracert.ReadOnly = true;
             this.dgvTracert.RowHeadersVisible = false;
+            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(196)))), ((int)(((byte)(218)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle2.Padding = new System.Windows.Forms.Padding(3);
+            this.dgvTracert.RowsDefaultCellStyle = dataGridViewCellStyle2;
             this.dgvTracert.Size = new System.Drawing.Size(631, 195);
             this.dgvTracert.TabIndex = 2;
             // 
@@ -219,7 +227,7 @@
             this.tpMaps.Location = new System.Drawing.Point(4, 35);
             this.tpMaps.Name = "tpMaps";
             this.tpMaps.Padding = new System.Windows.Forms.Padding(3);
-            this.tpMaps.Size = new System.Drawing.Size(695, 366);
+            this.tpMaps.Size = new System.Drawing.Size(643, 370);
             this.tpMaps.TabIndex = 1;
             this.tpMaps.Text = "Maps";
             this.tpMaps.UseVisualStyleBackColor = true;
@@ -240,8 +248,8 @@
             // scMap.Panel2
             // 
             this.scMap.Panel2.Controls.Add(this.webMap);
-            this.scMap.Size = new System.Drawing.Size(689, 360);
-            this.scMap.SplitterDistance = 106;
+            this.scMap.Size = new System.Drawing.Size(637, 364);
+            this.scMap.SplitterDistance = 107;
             this.scMap.TabIndex = 0;
             // 
             // btnMap
@@ -278,7 +286,8 @@
             this.webMap.Location = new System.Drawing.Point(0, 0);
             this.webMap.MinimumSize = new System.Drawing.Size(20, 20);
             this.webMap.Name = "webMap";
-            this.webMap.Size = new System.Drawing.Size(689, 250);
+            this.webMap.ScriptErrorsSuppressed = true;
+            this.webMap.Size = new System.Drawing.Size(637, 253);
             this.webMap.TabIndex = 1;
             // 
             // tpGeoip
@@ -291,13 +300,6 @@
             this.tpGeoip.TabIndex = 2;
             this.tpGeoip.Text = "GeoIP Database";
             this.tpGeoip.UseVisualStyleBackColor = true;
-            // 
-            // tracerouteWorker
-            // 
-            this.tracerouteWorker.WorkerReportsProgress = true;
-            this.tracerouteWorker.WorkerSupportsCancellation = true;
-            this.tracerouteWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.tracerouteWorker_DoWork);
-            this.tracerouteWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.tracerouteWorker_RunWorkerCompleted);
             // 
             // tlpGeoip
             // 
@@ -356,29 +358,16 @@
             this.panelGeoip.Size = new System.Drawing.Size(591, 227);
             this.panelGeoip.TabIndex = 1;
             // 
-            // rbGeoipInternal
+            // btnGeoipBrowse
             // 
-            this.rbGeoipInternal.AutoSize = true;
-            this.rbGeoipInternal.Checked = true;
-            this.rbGeoipInternal.Location = new System.Drawing.Point(19, 18);
-            this.rbGeoipInternal.Name = "rbGeoipInternal";
-            this.rbGeoipInternal.Size = new System.Drawing.Size(272, 24);
-            this.rbGeoipInternal.TabIndex = 0;
-            this.rbGeoipInternal.TabStop = true;
-            this.rbGeoipInternal.Text = "Use internal database (GeoLite City)";
-            this.rbGeoipInternal.UseVisualStyleBackColor = true;
-            this.rbGeoipInternal.CheckedChanged += new System.EventHandler(this.rbGeoipInternal_CheckedChanged_1);
-            // 
-            // rbGeoipFile
-            // 
-            this.rbGeoipFile.AutoSize = true;
-            this.rbGeoipFile.Location = new System.Drawing.Point(19, 48);
-            this.rbGeoipFile.Name = "rbGeoipFile";
-            this.rbGeoipFile.Size = new System.Drawing.Size(83, 24);
-            this.rbGeoipFile.TabIndex = 1;
-            this.rbGeoipFile.Text = "Use file:";
-            this.rbGeoipFile.UseVisualStyleBackColor = true;
-            this.rbGeoipFile.CheckedChanged += new System.EventHandler(this.rbGeoipFile_CheckedChanged_1);
+            this.btnGeoipBrowse.Enabled = false;
+            this.btnGeoipBrowse.Location = new System.Drawing.Point(105, 75);
+            this.btnGeoipBrowse.Name = "btnGeoipBrowse";
+            this.btnGeoipBrowse.Size = new System.Drawing.Size(99, 30);
+            this.btnGeoipBrowse.TabIndex = 3;
+            this.btnGeoipBrowse.Text = "Browse...";
+            this.btnGeoipBrowse.UseVisualStyleBackColor = true;
+            this.btnGeoipBrowse.Click += new System.EventHandler(this.btnGeoipBrowse_Click);
             // 
             // tbGeoipDb
             // 
@@ -390,15 +379,36 @@
             this.tbGeoipDb.Size = new System.Drawing.Size(477, 25);
             this.tbGeoipDb.TabIndex = 2;
             // 
-            // btnGeoipBrowse
+            // rbGeoipFile
             // 
-            this.btnGeoipBrowse.Enabled = false;
-            this.btnGeoipBrowse.Location = new System.Drawing.Point(105, 75);
-            this.btnGeoipBrowse.Name = "btnGeoipBrowse";
-            this.btnGeoipBrowse.Size = new System.Drawing.Size(99, 30);
-            this.btnGeoipBrowse.TabIndex = 3;
-            this.btnGeoipBrowse.Text = "Browse...";
-            this.btnGeoipBrowse.UseVisualStyleBackColor = true;
+            this.rbGeoipFile.AutoSize = true;
+            this.rbGeoipFile.Location = new System.Drawing.Point(19, 48);
+            this.rbGeoipFile.Name = "rbGeoipFile";
+            this.rbGeoipFile.Size = new System.Drawing.Size(63, 17);
+            this.rbGeoipFile.TabIndex = 1;
+            this.rbGeoipFile.Text = "Use file:";
+            this.rbGeoipFile.UseVisualStyleBackColor = true;
+            this.rbGeoipFile.CheckedChanged += new System.EventHandler(this.rbGeoipFile_CheckedChanged_1);
+            // 
+            // rbGeoipInternal
+            // 
+            this.rbGeoipInternal.AutoSize = true;
+            this.rbGeoipInternal.Checked = true;
+            this.rbGeoipInternal.Location = new System.Drawing.Point(19, 18);
+            this.rbGeoipInternal.Name = "rbGeoipInternal";
+            this.rbGeoipInternal.Size = new System.Drawing.Size(194, 17);
+            this.rbGeoipInternal.TabIndex = 0;
+            this.rbGeoipInternal.TabStop = true;
+            this.rbGeoipInternal.Text = "Use internal database (GeoLite City)";
+            this.rbGeoipInternal.UseVisualStyleBackColor = true;
+            this.rbGeoipInternal.CheckedChanged += new System.EventHandler(this.rbGeoipInternal_CheckedChanged_1);
+            // 
+            // tracerouteWorker
+            // 
+            this.tracerouteWorker.WorkerReportsProgress = true;
+            this.tracerouteWorker.WorkerSupportsCancellation = true;
+            this.tracerouteWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.tracerouteWorker_DoWork);
+            this.tracerouteWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.tracerouteWorker_RunWorkerCompleted);
             // 
             // MainWindow
             // 
