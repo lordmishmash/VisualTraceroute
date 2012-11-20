@@ -37,16 +37,20 @@ namespace VisualTraceroute {
                 this.tbGeoipDb.Text = GeoipPath = Properties.Settings.Default.geoipDbPath;
             }
 
+            GeoipLoadDatabase(GeoipPath);
+        }
+
+        private bool GeoipLoadDatabase(string GeoipPath) {
             try {
                 lookupService = new LookupService(GeoipPath, LookupService.GEOIP_STANDARD);
+                lookupService.getCountry("255.255.255.255");    // GeoIP reads the db only when asked to do something
+
                 geoipDbLoaded = true;
             } catch (Exception) {
                 MessageBox.Show("Could not load Geoip database. Traceroute mapping will not be possible.", "Failed loading database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
-        }
-
-        private void UpdateLookupService() {
-
+            return true;
         }
 
         private void btnTraceroute_Click(object sender, EventArgs e) {
@@ -72,9 +76,11 @@ namespace VisualTraceroute {
             // Start the worker
             if (workerRunning) {
                 this.tracerouteWorker.CancelAsync();
+                this.btnTraceroute.Text = "Cancelling...";
+                this.btnTraceroute.Enabled = false;
             } else {
                 hopEntries.Clear();
-
+                this.tbTarget.Enabled = this.tbTTL.Enabled = this.tbMaxHops.Enabled = false;
                 var args = Tuple.Create<string, int, int>(tbTarget.Text, ttl, hops);
                 this.tracerouteWorker.RunWorkerAsync(args);
 
@@ -84,10 +90,15 @@ namespace VisualTraceroute {
         }
 
         private void tracerouteWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
+            this.btnTraceroute.Enabled = this.tbTarget.Enabled = this.tbTTL.Enabled = this.tbMaxHops.Enabled = true;
             this.btnTraceroute.Text = "Traceroute";
             workerRunning = false;
 
             tpMaps_Load(sender, e);
+
+            if (!e.Cancelled && e.Result != null && !((bool)e.Result)) {
+                MessageBox.Show("Couldnt resolve target hostname", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
 
         }
 
@@ -101,8 +112,14 @@ namespace VisualTraceroute {
             PingOptions pingOptions = new PingOptions(1, true);
              
             PingReply reply   = default(PingReply);
-            IPAddress[] hosts = Dns.GetHostAddresses(args.Item1);
-            IPAddress host    = hosts[0];
+            IPAddress host;
+            try {
+                IPAddress[] hosts = Dns.GetHostAddresses(args.Item1);
+                host = hosts[0];
+            } catch (Exception) {
+                e.Result = false;
+                return;
+            }
 
             for (int i = 1; i < args.Item3 + 1; i++) {
                 watch.Reset();
@@ -212,6 +229,26 @@ namespace VisualTraceroute {
             using (StreamReader reader = new StreamReader(stream)) {
                 webMap.DocumentText = reader.ReadToEnd();
             }
+
+            webMap.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(webMap_DocumentCompleted);
+        }
+
+        private void webMap_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e) {
+            HtmlElement points = webMap.Document.GetElementById("points");
+            foreach (HopEntry entry in hopEntries.Where(s => s.IP != string.Empty && !IsLanIP(IPAddress.Parse(s.IP)))) {
+                Location location = lookupService.getLocation(entry.IP);
+                if (location != null) {
+                    HtmlElement point = webMap.Document.CreateElement("div");
+                    point.SetAttribute("class", "point");
+                    point.SetAttribute("data-lat", location.latitude.ToString());
+                    point.SetAttribute("data-lng", location.longitude.ToString());
+                    point.SetAttribute("data-seq", entry.Seq.ToString());
+                    point.SetAttribute("data-ip", entry.IP);
+
+                    points.AppendChild(point);
+                }
+            }
+            webMap.Document.InvokeScript("mapNodes");
         }
 
         private void rbGeoipInternal_CheckedChanged_1(object sender, EventArgs e) {
@@ -226,6 +263,30 @@ namespace VisualTraceroute {
 
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e) {
             Properties.Settings.Default.Save();
+        }
+
+        private void btnGeoipBrowse_Click(object sender, EventArgs e) {
+            string input = string.Empty;
+
+            string path = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)).FullName;
+            if (Environment.OSVersion.Version.Major >= 6) {
+                path = Directory.GetParent(path).FullName;
+            }
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Filter = "Geoip Database (*.dat)|*.dat|All files(*.*)|*.*";
+            dialog.InitialDirectory = path;
+
+            DialogResult result = dialog.ShowDialog();
+            if (result == DialogResult.OK) {
+                tbGeoipDb.Text = dialog.FileName;
+
+                if (GeoipLoadDatabase(dialog.FileName)) {
+                    Properties.Settings.Default.geoipUseInternal = false;
+                    Properties.Settings.Default.geoipDbPath = dialog.FileName;
+                } else {
+                    tbGeoipDb.Text = "";
+                }
+            }
         }
     }
 
