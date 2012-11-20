@@ -24,6 +24,7 @@ This application includes GeoLite data created by MaxMind, available from
 http://www.maxmind.com. It also uses MaxMinds C# Api.
 
 ### Accuracy of Geoip
+
 By default this application uses the free GeoLiteCity database (in /res/GeoLiteCity.dat).
 If you have a commercial database you can switch to it from whitin the application.
 
