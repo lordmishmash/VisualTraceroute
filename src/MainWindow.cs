@@ -9,13 +9,44 @@ using System.Windows.Forms;
 using System.Net.NetworkInformation;
 using System.Net;
 using System.Diagnostics;
+using System.Net.Sockets;
+using System.IO;
+using System.Reflection;
 
 namespace VisualTraceroute {
     public partial class MainWindow : Form {
         bool workerRunning = false;
+        bool geoipDbLoaded = false;
+
+        SyncList<HopEntry> hopEntries;
+        LookupService lookupService;
 
         public MainWindow() {
             InitializeComponent();
+            hopEntries = new SyncList<HopEntry>(this);
+
+            dgvTracert.DataSource = hopEntries;
+        }
+
+        private void MainWindow_Load(object sender, EventArgs e) {
+            string GeoipPath = "./res/GeoLiteCity.dat";
+            if (Properties.Settings.Default.geoipUseInternal) {
+                this.rbGeoipInternal.Checked = true;
+            } else {
+                this.rbGeoipFile.Checked = true;
+                this.tbGeoipDb.Text = GeoipPath = Properties.Settings.Default.geoipDbPath;
+            }
+
+            try {
+                lookupService = new LookupService(GeoipPath, LookupService.GEOIP_STANDARD);
+                geoipDbLoaded = true;
+            } catch (Exception) {
+                MessageBox.Show("Could not load Geoip database. Traceroute mapping will not be possible.", "Failed loading database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void UpdateLookupService() {
+
         }
 
         private void btnTraceroute_Click(object sender, EventArgs e) {
@@ -42,7 +73,8 @@ namespace VisualTraceroute {
             if (workerRunning) {
                 this.tracerouteWorker.CancelAsync();
             } else {
-                this.dgvTracert.Rows.Clear();
+                hopEntries.Clear();
+
                 var args = Tuple.Create<string, int, int>(tbTarget.Text, ttl, hops);
                 this.tracerouteWorker.RunWorkerAsync(args);
 
@@ -53,8 +85,10 @@ namespace VisualTraceroute {
 
         private void tracerouteWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
             this.btnTraceroute.Text = "Traceroute";
-
             workerRunning = false;
+
+            tpMaps_Load(sender, e);
+
         }
 
         private void tracerouteWorker_DoWork(object sender, DoWorkEventArgs e) {
@@ -82,34 +116,17 @@ namespace VisualTraceroute {
                 }
 
                 if (reply.Status == IPStatus.Success) {
-                    AddRow(reply.Address, GetHostname(reply.Address), watch.ElapsedMilliseconds, i);
+                    hopEntries.Add(new HopEntry (i, watch.ElapsedMilliseconds, GetHostname(reply.Address), reply.Address.ToString()));
                     break;
                 } else if (reply.Status == IPStatus.TtlExpired) {
-                    AddRow(reply.Address, GetHostname(reply.Address), watch.ElapsedMilliseconds, i);
+                    hopEntries.Add(new HopEntry(i, watch.ElapsedMilliseconds, GetHostname(reply.Address), reply.Address.ToString()));
                     pingOptions.Ttl += 1;
+                } else if (reply.Status == IPStatus.TimedOut) {
+                    hopEntries.Add(new HopEntry(i, 0, "time out: try increasing the TTL", ""));
                 } else {
-                    Console.WriteLine("error: " + reply.Status);
+                    hopEntries.Add(new HopEntry(i, 0, string.Format("unknown error: {0}", reply.Status), ""));
                 }
-            }
-        }
-
-        delegate void AddRowCallback(IPAddress address, string hostname, long delay, int seq);
-        private void AddRow(IPAddress address, string hostname, long delay, int seq) {
-            if (this.dgvTracert.InvokeRequired) {
-                AddRowCallback callback = new AddRowCallback(AddRow);
-                this.Invoke(callback, new object[] { address, hostname, delay, seq });
-            } else {
-                object[] buffer = new object[4];
-                List<DataGridViewRow> rows = new List<DataGridViewRow>();
-
-                buffer[0] = seq;
-                buffer[1] = delay.ToString();
-                buffer[2] = hostname;
-                buffer[3] = address.ToString();
-                rows.Add(new DataGridViewRow());
-
-                rows[rows.Count - 1].CreateCells(this.dgvTracert, buffer);
-                this.dgvTracert.Rows.AddRange(rows.ToArray());
+                dgvTracert.Invoke((Action)(() => dgvTracert.DataSource = hopEntries));
             }
         }
 
@@ -122,6 +139,123 @@ namespace VisualTraceroute {
                 result = "unknown";
             }
             return result;
+        }
+
+        private void tlpVisualTraceroute_SelectedIndexChanged(object sender, EventArgs e) {
+            if (tlpVisualTraceroute.SelectedTab == tlpVisualTraceroute.TabPages["tpMaps"])
+                tpMaps_Load(sender, e);
+        }
+
+        private void tpMaps_Load(object sender, EventArgs e) {
+            if (workerRunning) {
+                lbMapStatus.Text = "Traceroute in progress, please wait for it to finish.";
+                return;
+            }
+
+            if (hopEntries.Count == 0) {
+                lbMapStatus.Text = "No entries to map. Please do a traceroute.";
+            } else {
+                lbMapStatus.Text = string.Format("{0} nodes can be mapped.", hopEntries.Where(s => s.IP != string.Empty && !IsLanIP(IPAddress.Parse(s.IP))).ToList().Count);
+                btnMap.Enabled = true;
+            }
+        }
+
+
+        /**
+         * Taken from StackOverflow: http://stackoverflow.com/a/7232612
+         * Original author: Jonathan Dickinson (http://stackoverflow.com/users/430560/jonathan-dickinson)
+         */
+        private static bool IsLanIP(IPAddress address) {
+            var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (var iface in interfaces) {
+                var properties = iface.GetIPProperties();
+                foreach (var ifAddr in properties.UnicastAddresses) {
+                    if (ifAddr.IPv4Mask != null &&
+                        ifAddr.Address.AddressFamily == AddressFamily.InterNetwork &&
+                        CheckMask(ifAddr.Address, ifAddr.IPv4Mask, address))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Taken from StackOverflow: http://stackoverflow.com/a/7232612
+         * Original author: Jonathan Dickinson (http://stackoverflow.com/users/430560/jonathan-dickinson)
+         */
+        private static bool CheckMask(IPAddress address, IPAddress mask, IPAddress target) {
+            if (mask == null)
+                return false;
+
+            var ba = address.GetAddressBytes();
+            var bm = mask.GetAddressBytes();
+            var bb = target.GetAddressBytes();
+
+            if (ba.Length != bm.Length || bm.Length != bb.Length)
+                return false;
+
+            for (var i = 0; i < ba.Length; i++) {
+                int m = bm[i];
+
+                int a = ba[i] & m;
+                int b = bb[i] & m;
+
+                if (a != b)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private void btnMap_Click(object sender, EventArgs e) {
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("VisualTraceroute.res.maps.html"))
+            using (StreamReader reader = new StreamReader(stream)) {
+                webMap.DocumentText = reader.ReadToEnd();
+            }
+        }
+
+        private void rbGeoipInternal_CheckedChanged_1(object sender, EventArgs e) {
+            btnGeoipBrowse.Enabled = false;
+            Properties.Settings.Default.geoipUseInternal = true;
+        }
+
+        private void rbGeoipFile_CheckedChanged_1(object sender, EventArgs e) {
+            btnGeoipBrowse.Enabled = true;
+            Properties.Settings.Default.geoipUseInternal = false;
+        }
+
+        private void MainWindow_FormClosing(object sender, FormClosingEventArgs e) {
+            Properties.Settings.Default.Save();
+        }
+    }
+
+
+    internal class HopEntry {
+        public HopEntry(int Seq, long Time, string Host, string IP) {
+            this.Seq  = Seq;
+            this.Time = Time;
+            this.Host = Host;
+            this.IP   = IP;
+        }
+
+        public int Seq {
+            get;
+            set;
+        }
+
+        public long Time {
+            get;
+            set;
+        }
+
+        public string Host {
+            get;
+            set;
+        }
+
+        public string IP {
+            get;
+            set;
         }
     }
 }

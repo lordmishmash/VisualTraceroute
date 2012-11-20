@@ -1,0 +1,49 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>Traceroute in Google Maps</title>
+        
+        <style type="text/css">
+            html, body
+            {
+                overflow: hidden;
+                height: 100%;
+            }
+            
+            body 
+            {
+                margin: 0;
+            }
+            
+            #map_canvas 
+            {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+
+        <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false&libraries=places"></script>
+        <script type="text/javascript">
+        var map = null;
+
+        function initialize() {
+            var options = {
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                center: new google.maps.LatLng(20, -10),
+                zoom: 2
+            };
+            map = new google.maps.Map(document.getElementById("map_canvas"), options);
+        }
+        </script>
+	</head>
+	<body onload="initialize()">
+    <div id="container">
+        <div id="map_canvas"></div>
+        <div id="points">
+        <!-- <div class="point"><div class="lat">1.0</div><div class="lng">1.0</div></div> -->
+        </div>
+    </div>
+	</body>
+</html>
